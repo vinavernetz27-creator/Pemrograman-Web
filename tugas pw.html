@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"> <!-- Mengatur karakter encoding ke UTF-8 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Pengaturan responsivitas layar -->
+<title>Form Data Mahasiswa</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif; /* Mengatur jenis font halaman */
+    margin: 20px; /* Jarak luar halaman */
+    background: #1e2a47; /* Warna latar belakang halaman (biru gelap) */
+}
+
+h2 {
+    text-align: center; /* Judul rata tengah */
+    color: white; /* Warna teks judul putih */
+}
+
+form {
+    background: white; /* Latar belakang form putih */
+    padding: 20px; /* Jarak dalam form */
+    border-radius: 10px; /* Sudut form melengkung */
+    margin-bottom: 20px; /* Jarak form dengan elemen di bawahnya */
+}
+
+label {
+    font-weight: bold; /* Teks label tebal */
+    display: block; /* Label diletakkan di baris baru */
+    margin-top: 10px; /* Jarak atas label */
+}
+
+input[type="text"], 
+input[type="password"], 
+textarea, 
+select {
+    width: 100%; /* Lebar elemen input penuh */
+    padding: 8px; /* Jarak dalam input */
+    margin: 5px 0 15px; /* Jarak antar input */
+    box-sizing: border-box; /* Ukuran input termasuk padding & border */
+    border: 1px solid #ccc; /* Bingkai tipis abu-abu */
+    border-radius: 4px; /* Sudut input melengkung */
+}
+
+.radio-group {
+    display: flex; /* Menyusun pilihan radio secara horizontal */
+    align-items: center; /* Pilihan rata tengah secara vertikal */
+    gap: 20px; /* Jarak antar pilihan radio */
+    margin: 10px 0 20px; /* Jarak kelompok radio dengan elemen lain */
+}
+
+.submit { background: #0dfd35; } /* Warna tombol submit (biru) */
+.reset { background: #dc3545; }  /* Warna tombol reset (merah) */
+
+table {
+    width: 100%; /* Lebar tabel penuh */
+    border-collapse: collapse; /* Menyatukan garis border tabel */
+    background: white; /* Latar belakang tabel putih */
+}
+
+th, td {
+    border: 1px solid #ccc; /* Garis antar sel tabel */
+    padding: 10px; /* Jarak teks di dalam sel */
+    text-align: center; /* Teks rata tengah */
+}
+
+th {
+    background: #0d3b66; /* Warna latar judul tabel (biru tua) */
+    color: white; /* Warna teks judul tabel putih */
+}
+</style>
+</head>
+
+<body>
+
+<h2>Form Data Mahasiswa</h2>
+
+<form id="formMahasiswa"> <!-- Form input dengan ID untuk akses JavaScript -->
+    <label>NIM</label>
+    <input type="text" id="nim" required> <!-- Input NIM wajib diisi -->
+
+    <label>Nama</label>
+    <input type="text" id="nama" required> <!-- Input Nama wajib diisi -->
+
+    <label>Alamat</label>
+    <textarea id="alamat"></textarea> <!-- Input alamat teks panjang -->
+
+    <label>Jenis Kelamin</label>
+    <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="jk" value="Pria" required> Pria</label>
+        <label class="radio-item"><input type="radio" name="jk" value="Wanita"> Wanita</label>
+    </div>
+
+    <label>Tanggal Lahir</label>
+    <div class="ttl">
+        <select id="tanggal"></select> <!-- Dropdown tanggal diisi via JS -->
+        <select id="bulan"> <!-- Dropdown daftar bulan -->
+            <option>Januari</option> <option>Februari</option> <option>Maret</option>
+            <option>April</option> <option>Mei</option> <option>Juni</option>
+            <option>Juli</option> <option>Agustus</option> <option>September</option>
+            <option>Oktober</option> <option>November</option> <option>Desember</option>
+        </select>
+        <select id="tahun"></select> <!-- Dropdown tahun diisi via JS -->
+    </div>
+
+    <label>Password</label>
+    <input type="password" id="password" required> <!-- Input password (karakter tersembunyi) -->
+
+    <button type="submit" class="submit">Submit</button> <!-- Tombol simpan data -->
+    <button type="reset" class="reset">Reset</button> <!-- Tombol hapus input form -->
+</form>
+
+<h2>Data Mahasiswa</h2>
+
+<table>
+    <thead>
+        <tr> <!-- Judul kolom tabel -->
+            <th>NIM</th> <th>Nama</th> <th>Alamat</th> <th>JK</th>
+            <th>Tanggal Lahir</th> <th>Password</th> <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody> <!-- Wadah baris data mahasiswa -->
+</table>
+
+<script>
+// Mengambil elemen-elemen HTML berdasarkan ID
+const form = document.getElementById("formMahasiswa");
+const tableBody = document.getElementById("tableBody");
+const tanggal = document.getElementById("tanggal");
+const tahun = document.getElementById("tahun");
+
+let editIndex = -1; // Variabel untuk menandai status edit data
+
+// Looping untuk mengisi angka 1-31 ke dropdown tanggal
+for(let i=1; i<=31; i++){
+    tanggal.innerHTML += `<option>${i}</option>`;
+}
+
+// Looping untuk mengisi tahun 1990-2026 ke dropdown tahun
+for(let i=1990; i<=2026; i++){
+    tahun.innerHTML += `<option>${i}</option>`;
+}
+
+tampilkanData(); // Memanggil fungsi untuk memuat data dari memori
+
+// Fungsi saat tombol submit ditekan
+form.addEventListener("submit", function(e){
+    e.preventDefault(); // Mencegah halaman refresh
+
+    let data = JSON.parse(localStorage.getItem("mahasiswa")) || []; // Ambil data dari LocalStorage
+    const jkChecked = document.querySelector('input[name="jk"]:checked');
+
+    let mahasiswa = { // Objek berisi inputan user
+        nim: document.getElementById("nim").value,
+        nama: document.getElementById("nama").value,
+        alamat: document.getElementById("alamat").value,
+        jk: jkChecked ? jkChecked.value : "-",
+        ttl: `${tanggal.value} ${document.getElementById("bulan").value} ${tahun.value}`,
+        password: "*".repeat(document.getElementById("password").value.length) // Sensor password
+    };
+
+    if(editIndex === -1){
+        data.push(mahasiswa); // Tambah data baru jika tidak sedang mengedit
+    } else {
+        data[editIndex] = mahasiswa; // Update data jika sedang mengedit
+        editIndex = -1;
+    }
+
+    localStorage.setItem("mahasiswa", JSON.stringify(data)); // Simpan kembali ke LocalStorage
+    tampilkanData(); // Update tabel
+    form.reset(); // Kosongkan form
+});
+
+// Fungsi untuk menampilkan data ke tabel
+function tampilkanData(){
+    tableBody.innerHTML = ""; // Bersihkan tabel terlebih dahulu
+    let data = JSON.parse(localStorage.getItem("mahasiswa")) || [];
+
+    data.forEach((item, index) => { // Perulangan data untuk dibuatkan baris HTML
+        tableBody.innerHTML += `
+        <tr>
+            <td>${item.nim}</td>
+            <td>${item.nama}</td>
+            <td>${item.alamat}</td>
+            <td>${item.jk}</td>
+            <td>${item.ttl}</td>
+            <td>${item.password}</td>
+            <td>
+                <button class="icon-btn edit" onclick="editData(${index})">✏️</button> <!-- Tombol Edit -->
+                <button class="icon-btn hapus" onclick="hapusData(${index})">🗑️</button> <!-- Tombol Hapus -->
+            </td>
+        </tr>`;
+    });
+}
+
+// Fungsi untuk menghapus data mahasiswa
+function hapusData(index){
+    let data = JSON.parse(localStorage.getItem("mahasiswa")) || [];
+    data.splice(index, 1); // Hapus 1 data berdasarkan index
+    localStorage.setItem("mahasiswa", JSON.stringify(data));
+    tampilkanData();
+}
+
+// Fungsi untuk memasukkan data dari tabel kembali ke form (Edit)
+function editData(index){
+    let data = JSON.parse(localStorage.getItem("mahasiswa")) || [];
+    let item = data[index];
+
+    document.getElementById("nim").value = item.nim;
+    document.getElementById("nama").value = item.nama;
+    document.getElementById("alamat").value = item.alamat;
+    
+    editIndex = index; // Set index yang sedang diedit
+    window.scrollTo(0,0); // Geser layar kembali ke atas (ke arah form)
+}
+</script>
+
+</body>
+</html>
